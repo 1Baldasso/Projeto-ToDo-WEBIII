@@ -1,5 +1,6 @@
 .App
 {
+  background: linear-gradient(rgb(43, 42, 42),rgb(145, 115, 115) #fff);
   margin:0;
   padding: 0;
 }
