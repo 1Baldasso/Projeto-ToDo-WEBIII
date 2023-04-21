@@ -1,4 +1,4 @@
-import { db, auth } from '../../Database/firebaseConnection'
+import { db, auth } from '../../Database/firebaseConnection.js'
 import {
     doc,
     setDoc,
@@ -26,19 +26,22 @@ type Todo = {
 };
 export default class FirebaseProvider{
     private static lastId;
-    async getTodos()
+    async getTodos() : Promise<Todo[]>
     {
         let list: Todo[] = []; 
-        const dados = onSnapshot(collection(db,"todos"),(snapshot)=>{
-            snapshot.forEach((doc)=>{
-                list.push({
-                    id: parseInt(doc.data().id),
-                    titulo: doc.data().titulo,
-                    descricao: doc.data().descricao
+        async function loadTodo(){
+            await onSnapshot(collection(db,"todos"),(snapshot)=>{
+                snapshot.forEach((doc)=>{
+                    list.push({
+                        id: parseInt(doc.data().id),
+                        titulo: doc.data().titulo,
+                        descricao: doc.data().descricao
+                    })
                 })
             })
-        })
-        return list;
+            return list;
+        }
+        return loadTodo();
     }
     async postTodos(todo: Todo)
     {
@@ -54,28 +57,72 @@ export default class FirebaseProvider{
     }
     async deleteTodo(id: number)
     {
-        
+        await deleteDoc(doc(db,"todos",id.toString()))
+        .then(()=>{
+            return true;
+        }).catch(()=>{
+            return false;
+        });
     }
     async updateTodo(id,todo: Todo)
     {
-
+        await updateDoc(doc(db,"todos",id.toString()),{
+            titulo: todo.titulo,
+            descricao: todo.descricao
+        }).then(()=>{
+            return true;
+        }
+        ).catch(()=>{
+            return false;
+        });
     }
     async login(usuario, senha)
     {
-
+        await signInWithEmailAndPassword(auth,usuario,senha)
+    .then((userCredential)=>{
+        alert("Logado com sucesso!");
+    }).catch((error)=>{
+      if(error.code === 'auth/wrong-password' || error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found')
+        alert("Dados de login incorreta!");
+      else
+        throw error;
+    })
     }
     async logout()
     {
-
+        await signOut(auth).then(()=>{
+            alert("Deslogado com sucesso!");
+        }).catch((error)=>{
+            throw error;
+        });
     }
-    async cadastro()
+    async cadastro(email, senha)
     {
-
+        await createUserWithEmailAndPassword(auth,email,senha)
+            .then((user)=>{
+            console.log("Usuário criado com sucesso!");
+                return true
+            }).catch((error)=>{
+            if(error.code === 'auth/weak-password'){
+                alert("Senha fraca!");
+                return false;
+            }    
+            else if(error.code === 'auth/email-already-in-use'){
+                alert("Email já cadastrado!");
+                return false;
+            }
+            else
+                throw error;
+            });
     }
     async getLastId()
     {
         if(FirebaseProvider.lastId === undefined)
-            return (await this.getTodos()).length;
+        {
+            await this.getTodos().then((data)=>{
+                FirebaseProvider.lastId = data.at(-1)?.id;
+            })
+        }   
         return FirebaseProvider.lastId;
     }
 }

@@ -2,14 +2,14 @@ import './style.css'
 import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 
-function TodoCard() {
+function TodoCard(props) {
   return (
     <div className='mt-3'>
     <Card style={{ width: '18rem' }}>
       <Card.Body>
-        <Card.Title>Titulo da tarefa</Card.Title>
+        <Card.Title>{props.entity.titulo}</Card.Title>
         <Card.Text>
-          Assunto da tarefa
+          {props.entity.descricao}
         </Card.Text>
       </Card.Body>
     </Card>
